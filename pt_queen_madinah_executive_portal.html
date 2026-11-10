@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PT. Queen Madinah Internasional - Modern Executive Portal</title>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- SheetJS (Excel Parser & Generator) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- QRCode.js for QR Barcode Invoices -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(226, 232, 240, 0.8); }
+  @keyframes textGlow { 0%, 100% { text-shadow: 0 0 12px rgba(251, 191, 36, 0.5); } 50% { text-shadow: 0 0 22px rgba(251, 191, 36, 0.9); } }
+  .animate-gold-glow { animation: textGlow 3s infinite ease-in-out; }
+  @media print {
+    body * { visibility: hidden; }
+    #invoice-print-area, #invoice-print-area *, #leader-invoice-print-area, #leader-invoice-print-area * { visibility: visible; }
+    #invoice-print-area, #leader-invoice-print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 24px; background: white !important; color: black !important; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body id="body-theme" class="bg-slate-950 text-slate-800 min-h-screen flex flex-col selection:bg-amber-400 selection:text-slate-950">
+
+<!-- Indikator Sync Firebase Cloud -->
+<div id="sync-loader" class="fixed top-3 right-3 z-50 bg-amber-400 text-slate-950 px-4 py-2 rounded-2xl text-xs font-black shadow-2xl flex items-center gap-2 hidden">
+  <i class="fa-solid fa-spinner animate-spin"></i> Menyinkronkan Firebase Realtime...
+</div>
+
+<!-- Header Navbar -->
+<header id="header-theme" class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-950 text-white shadow-2xl sticky top-0 z-40 border-b border-amber-500/20 backdrop-blur-md">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+    <div class="flex items-center gap-3.5 w-full md:w-auto justify-between md:justify-start">
+      <div class="flex items-center gap-3">
+        <div id="nav-logo-container" class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-200 p-0.5 shadow-lg shadow-amber-500/20 shrink-0">
+          <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center overflow-hidden">
+            <i class="fa-solid fa-kaaba text-2xl text-amber-400" id="nav-logo-icon"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 id="nav-company-name" class="font-black text-base md:text-lg tracking-tight text-white drop-shadow-md">PT. QUEEN MADINAH INTERNASIONAL</h1>
+            <span class="text-[9px] bg-gradient-to-r from-amber-400 to-amber-300 text-slate-950 px-2 py-0.5 rounded-full font-black shadow-sm flex items-center gap-1">
+              <i class="fa-solid fa-bolt"></i> FIREBASE REALTIME
+            </span>
+          </div>
+          <div class="flex items-center gap-2 mt-0.5">
+            <div id="nav-owner-photo-container" class="w-5 h-5 rounded-full bg-amber-400/20 border border-amber-400/40 overflow-hidden flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-user-tie text-[10px] text-amber-300"></i>
+            </div>
+            <p id="nav-owner-sub" class="text-[11px] text-emerald-200/90 font-medium">Owner: Wahyu Tri Kusumawati</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
+      <button onclick="switchTab('dashboard')" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-white/15 text-white shadow-inner transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-chart-pie text-amber-400"></i> Dashboard</button>
+      <button onclick="switchTab('paket')" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-white/10 text-emerald-100 transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-plane-departure text-amber-400"></i> Paket Umroh</button>
+      <button onclick="switchTab('leader')" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-white/10 text-emerald-100 transition flex items-center gap-2 whitespace-nowrap bg-amber-500/20 border border-amber-400/30 text-amber-300"><i class="fa-solid fa-award text-amber-400"></i> Portal Leader & Komisi</button>
+      <button onclick="switchTab('dokumentasi')" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-white/10 text-emerald-100 transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-photo-film text-amber-400"></i> Dokumentasi</button>
+      <button onclick="checkAdminAccess('jamaah')" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-white/10 text-emerald-100 transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-users text-amber-400"></i> Jamaah (Admin)</button>
+      <button onclick="checkAdminAccess('tabungan')" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-white/10 text-emerald-100 transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-wallet text-amber-400"></i> Tabungan (Admin)</button>
+      <button onclick="checkAdminAccess('pengaturan')" class="tab-btn px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-white/10 text-emerald-100 transition flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-gears text-amber-400"></i> Pengaturan <span id="admin-lock-badge" class="text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full font-black">Admin</span></button>
+    </div>
+  </div>
+</header>
+
+<!-- Main Container -->
+<main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+
+  <!-- RUNNING TEXT & KONTAK PERUSAHAAN -->
+  <div class="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 border border-amber-500/30 p-3 rounded-2xl shadow-lg flex flex-col md:flex-row justify-between items-center gap-3">
+    <div class="flex items-center gap-3 w-full md:w-auto">
+      <div class="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-bullhorn text-amber-400 animate-pulse text-xs"></i>
+      </div>
+      <marquee id="announcement-text" class="text-xs font-bold text-emerald-100 tracking-wide">Selamat Datang di Portal Resmi PT. Queen Madinah Internasional - Pilihan Utama Perjalanan Ibadah Umroh Anda.</marquee>
+    </div>
+    <div class="flex items-center gap-3 shrink-0 text-xs text-amber-300 font-bold border-t md:border-t-0 border-amber-500/20 pt-2 md:pt-0 w-full md:w-auto justify-end">
+      <span><i class="fa-brands fa-whatsapp text-emerald-400"></i> <a id="contact-wa-link" href="#" target="_blank" class="hover:underline">0812-3456-7890</a></span>
+      <span>|</span>
+      <span><i class="fa-solid fa-location-dot text-rose-400"></i> <span id="contact-address-text">Pekalongan, Jawa Tengah</span></span>
+    </div>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div id="tab-dashboard" class="space-y-6">
+    <!-- SLIDER BANNER OTOMATIS -->
+    <div id="slider-container" class="relative overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 border-2 border-amber-400/40 rounded-3xl p-6 md:p-10 shadow-2xl text-white min-h-[280px] flex flex-col justify-between">
+      <div id="slider-slides-wrapper" class="relative z-10 space-y-4"></div>
+      <div class="relative z-10 flex justify-between items-center pt-6 border-t border-white/10">
+        <div id="slider-dots" class="flex gap-2"></div>
+        <div class="flex gap-2">
+          <button onclick="prevSlide()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-chevron-left"></i></button>
+          <button onclick="nextSlide()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-xs font-bold"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pengecekan Mandiri NIK -->
+    <div class="glass-card p-6 md:p-8 rounded-3xl shadow-2xl border-2 border-amber-400/30 space-y-4 bg-gradient-to-br from-white via-emerald-50/30 to-white">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-800 text-amber-300 flex items-center justify-center text-lg shadow-md">
+          <i class="fa-solid fa-id-card"></i>
+        </div>
+        <div>
+          <h3 class="font-black text-base md:text-lg text-slate-900">Cek Status Tabungan & Pendaftaran Mandiri</h3>
+          <p class="text-xs text-slate-500">Masukkan 16 digit NIK Anda untuk memverifikasi nama, paket, total dana masuk, dan sisa pelunasan.</p>
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3 pt-1">
+        <input type="text" id="public-nik-input" placeholder="Masukkan 16 digit NIK Anda..." maxlength="16" class="flex-1 px-4 py-3 border-2 border-slate-200 rounded-2xl text-xs font-bold bg-white focus:outline-none focus:border-emerald-700">
+        <button onclick="checkPublicJamaahByNIK()" class="bg-gradient-to-r from-emerald-800 to-teal-900 text-white px-7 py-3 rounded-2xl text-xs font-black shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-magnifying-glass text-amber-300"></i> Cek Status Saya
+        </button>
+      </div>
+      <div id="public-result-card" class="hidden mt-4 p-5 rounded-2xl bg-white border-2 border-emerald-500/30 shadow-lg space-y-4 text-xs">
+        <div class="flex justify-between items-center border-b pb-3">
+          <span class="font-black text-emerald-950 uppercase tracking-wider text-xs flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-600"></i> Hasil Verifikasi Data Jamaah</span>
+          <span id="pub-status-badge" class="px-3 py-1 rounded-full font-black text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300">Terdaftar Resmi</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-400 font-extrabold text-[9px] uppercase">NAMA LENGKAP</p><p id="pub-nama" class="font-black text-sm text-slate-900 mt-0.5">-</p></div>
+          <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-400 font-extrabold text-[9px] uppercase">PAKET UMROH</p><p id="pub-paket" class="font-bold text-slate-800 mt-0.5">-</p></div>
+          <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-400 font-extrabold text-[9px] uppercase">TOTAL DANA MASUK</p><p id="pub-bayar" class="font-black text-emerald-800 mt-0.5">-</p></div>
+          <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-400 font-extrabold text-[9px] uppercase">SISA PELUNASAN</p><p id="pub-sisa" class="font-black text-rose-600 mt-0.5">-</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATISTIK -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="glass-card p-5 rounded-2xl shadow-xl flex justify-between items-center border-l-4 border-l-emerald-600">
+        <div><p class="text-[10px] font-black text-slate-400 uppercase">TOTAL JAMAAH</p><h3 id="stat-total-jamaah" class="text-2xl font-black text-slate-900 mt-1">0</h3></div>
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl"><i class="fa-solid fa-users"></i></div>
+      </div>
+      <div class="glass-card p-5 rounded-2xl shadow-xl flex justify-between items-center border-l-4 border-l-amber-500">
+        <div><p class="text-[10px] font-black text-slate-400 uppercase">DANA TERKUMPUL</p><h3 id="stat-total-tabungan" class="text-xl font-black text-slate-900 mt-1">Rp 0</h3></div>
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl"><i class="fa-solid fa-wallet"></i></div>
+      </div>
+      <div class="glass-card p-5 rounded-2xl shadow-xl flex justify-between items-center border-l-4 border-l-rose-600">
+        <div><p class="text-[10px] font-black text-slate-400 uppercase">SISA PELUNASAN</p><h3 id="stat-sisa-pelunasan" class="text-xl font-black text-rose-600 mt-1">Rp 0</h3></div>
+        <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+      </div>
+      <div class="glass-card p-5 rounded-2xl shadow-xl flex justify-between items-center border-l-4 border-l-purple-600">
+        <div><p class="text-[10px] font-black text-slate-400 uppercase">TOTAL KOMISI LEADER</p><h3 id="stat-total-komisi" class="text-xl font-black text-purple-900 mt-1">Rp 0</h3></div>
+        <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center text-xl"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAKET TAB -->
+  <div id="tab-paket" class="space-y-6 hidden">
+    <div class="glass-card p-6 rounded-3xl shadow-xl flex justify-between items-center border">
+      <div><h2 class="text-lg font-black text-slate-900"><i class="fa-solid fa-plane-departure text-emerald-800"></i> Katalog Paket Umroh</h2></div>
+      <button onclick="checkAdminAction(() => openPaketModal())" class="bg-emerald-800 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-md"><i class="fa-solid fa-circle-plus"></i> Tambah Paket (Admin)</button>
+    </div>
+    <div id="paket-full-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+  </div>
+
+  <!-- PORTAL LEADER & KOMISI TAB -->
+  <div id="tab-leader" class="space-y-6 hidden">
+    <div class="glass-card p-6 rounded-3xl shadow-xl border bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-transparent space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-award text-amber-500"></i> Portal Tim Leader & Rekap Komisi Realtime
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">Kelola data Tim Leader, nominal komisi per jamaah, dan pantau rekapitulasi secara realtime.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="text" id="leader-search-input" placeholder="Cari Nama Leader..." onkeyup="renderLeaderPortal()" class="px-4 py-2 border rounded-xl text-xs font-bold bg-white">
+          <button onclick="checkAdminAction(() => openLeaderModal())" class="bg-emerald-800 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md flex items-center gap-1.5">
+            <i class="fa-solid fa-user-plus text-amber-400"></i> Tambah Leader (Admin)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ringkasan Komisi Per Leader -->
+    <div id="leader-summary-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <!-- DOKUMENTASI TAB -->
+  <div id="tab-dokumentasi" class="space-y-6 hidden">
+    <div class="glass-card p-6 rounded-3xl shadow-xl flex justify-between items-center border">
+      <div><h2 class="text-lg font-black text-slate-900"><i class="fa-solid fa-photo-film text-emerald-800"></i> Galeri Dokumentasi Perjalanan</h2></div>
+      <button onclick="checkAdminAction(() => openDokumentasiModal())" class="bg-emerald-800 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-md"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Media (Admin)</button>
+    </div>
+    <div id="dokumentasi-grid-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <!-- JAMAAH TAB (Admin Only) -->
+  <div id="tab-jamaah" class="space-y-6 hidden">
+    <div class="glass-card p-6 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border">
+      <div><h2 class="text-lg font-black text-slate-900"><i class="fa-solid fa-users text-emerald-800"></i> Manajemen Data Jamaah (Admin)</h2></div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="downloadExcelTemplate()" class="bg-amber-500 text-slate-950 px-4 py-2.5 rounded-xl text-xs font-black shadow-sm"><i class="fa-solid fa-file-arrow-down"></i> Template Excel</button>
+        <button onclick="document.getElementById('excel-file-input').click()" class="bg-teal-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-sm"><i class="fa-solid fa-file-excel"></i> Import Excel</button>
+        <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="handleExcelImport(event)" class="hidden">
+        <button onclick="openJamaahModal()" class="bg-emerald-800 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-sm"><i class="fa-solid fa-user-plus"></i> Tambah Jamaah</button>
+      </div>
+    </div>
+    <div class="glass-card rounded-3xl shadow-xl overflow-hidden border">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[850px]">
+          <thead><tr class="bg-slate-900 text-amber-300 text-xs uppercase font-black border-b"><th class="p-4">No</th><th class="p-4">Nama & NIK</th><th class="p-4">Leader (Komisi Rp 2jt)</th><th class="p-4">Kontak</th><th class="p-4 text-center">Invoice / Hapus</th></tr></thead>
+          <tbody id="jamaah-table-body" class="divide-y text-xs text-slate-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABUNGAN TAB (Admin Only) -->
+  <div id="tab-tabungan" class="space-y-6 hidden">
+    <div class="glass-card p-6 rounded-3xl shadow-xl flex justify-between items-center border">
+      <div><h2 class="text-lg font-black text-slate-900"><i class="fa-solid fa-wallet text-emerald-800"></i> Tabungan & Cicilan (Admin)</h2></div>
+      <button onclick="openCicilanModal()" class="bg-emerald-800 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-md"><i class="fa-solid fa-circle-plus"></i> Catat Setoran</button>
+    </div>
+    <div id="tabungan-jamaah-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <!-- PENGATURAN TAB (Admin Only) -->
+  <div id="tab-pengaturan" class="space-y-6 hidden">
+    <div class="glass-card p-6 md:p-8 rounded-3xl shadow-2xl border max-w-4xl mx-auto space-y-6">
+      <div class="border-b pb-4"><h2 class="text-xl font-black text-slate-900"><i class="fa-solid fa-gears text-emerald-800"></i> Pengaturan Portal & Kustomisasi Tema (Admin)</h2></div>
+      <form onsubmit="saveAllSettings(event)" class="space-y-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div><label class="font-bold">Nama Travel</label><input type="text" id="setting-company-name" class="w-full p-2.5 border rounded-xl font-bold bg-white" required></div>
+          <div><label class="font-bold">Nama Owner</label><input type="text" id="setting-owner-name" class="w-full p-2.5 border rounded-xl font-bold bg-white" required></div>
+          <div><label class="font-bold">PIN Admin</label><input type="password" id="setting-admin-pin" placeholder="PIN baru/saat ini" class="w-full p-2.5 border rounded-xl font-bold bg-white"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="font-bold">Alamat Kantor Perusahaan</label><textarea id="setting-address" rows="2" class="w-full p-2.5 border rounded-xl font-bold bg-white" required></textarea></div>
+          <div><label class="font-bold">Nomor WhatsApp Perusahaan</label><input type="text" id="setting-wa-phone" placeholder="Contoh: 081234567890" class="w-full p-2.5 border rounded-xl font-bold bg-white" required></div>
+        </div>
+
+        <div><label class="font-bold">Running Text Pengumuman</label><input type="text" id="setting-announcement" class="w-full p-2.5 border rounded-xl font-bold bg-white" required></div>
+        
+        <!-- Pilihan Tema Warna Dashboard -->
+        <div class="pt-2 border-t">
+          <label class="font-bold block mb-1.5 text-slate-900">Tema Warna Utama Dashboard</label>
+          <select id="setting-theme-color" class="w-full p-2.5 border rounded-xl font-bold bg-white">
+            <option value="emerald">Emerald Luxe (Hijau Mewah & Emas)</option>
+            <option value="midnight">Midnight Deep (Biru Malam Eksekutif)</option>
+            <option value="ruby">Ruby Royal (Merah Marun & Emas)</option>
+            <option value="obsidian">Obsidian Dark (Hitam Elegan)</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t">
+          <div><label class="font-bold">Foto Profil Owner</label><input type="file" id="setting-owner-photo-file" accept="image/*" class="w-full text-xs bg-slate-50 p-2 border rounded-xl"></div>
+          <div><label class="font-bold">Logo Travel (Ikon Navigasi)</label><input type="file" id="setting-logo-file" accept="image/*" class="w-full text-xs bg-slate-50 p-2 border rounded-xl"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t">
+          <div><label class="font-bold">Foto Tanda Tangan Digital (Owner)</label><input type="file" id="setting-ttd-file" accept="image/*" class="w-full text-xs bg-slate-50 p-2 border rounded-xl"></div>
+          <div><label class="font-bold">Stempel Resmi Travel</label><input type="file" id="setting-stempel-file" accept="image/*" class="w-full text-xs bg-slate-50 p-2 border rounded-xl"></div>
+        </div>
+
+        <!-- Manajemen Slider Banner -->
+        <div class="pt-4 border-t space-y-3">
+          <div class="flex justify-between items-center"><h3 class="font-black text-sm text-slate-900">Kelola Slide Banner Promosi (Foto / Video)</h3><button type="button" onclick="openSliderModal()" class="bg-emerald-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-plus"></i> Tambah Slide</button></div>
+          <div id="admin-slider-list" class="space-y-2"></div>
+        </div>
+
+        <div class="flex justify-between items-center pt-5 border-t">
+          <button type="button" onclick="adminLogout()" class="text-rose-600 font-black">Keluar Admin</button>
+          <button type="submit" class="bg-emerald-800 text-white px-7 py-3 rounded-2xl font-black shadow-lg">Simpan Ke Firebase Realtime</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</main>
+
+<!-- INVOICE JAMAAH MODAL -->
+<div id="invoice-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden my-6 text-slate-800 shadow-2xl border">
+    <div class="bg-slate-950 text-white px-6 py-4 flex justify-between items-center no-print border-b">
+      <h3 class="font-black text-sm flex items-center gap-2"><i class="fa-solid fa-qrcode text-amber-400"></i> Invoice Realtime Jamaah</h3>
+      <div class="flex gap-2">
+        <button onclick="window.print()" class="bg-emerald-800 text-white text-xs font-black px-4 py-2 rounded-xl"><i class="fa-solid fa-print"></i> Cetak</button>
+        <button onclick="closeInvoiceModal()" class="text-slate-400 text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div id="invoice-print-area" class="p-8 space-y-6 bg-white text-slate-900">
+      <div class="flex justify-between items-start border-b-2 border-slate-900 pb-6">
+        <div><h2 id="inv-company-name" class="font-black text-xl text-slate-950 uppercase">PT. QUEEN MADINAH INTERNASIONAL</h2><p id="inv-company-address" class="text-xs text-slate-600 mt-1">Jl. Diponegoro Dk. Karagan, Gandarum</p></div>
+        <div class="text-right"><span class="px-3 py-1 bg-slate-950 text-amber-400 text-[10px] font-black rounded-lg">INVOICE JAMAAH</span><p id="inv-number" class="text-xs font-black mt-2">INV/QM/2026/001</p></div>
+      </div>
+      <div class="grid grid-cols-2 gap-6 bg-slate-50 p-4 rounded-2xl text-xs border">
+        <div><p class="font-black text-slate-400 text-[9px] uppercase">JAMAAH</p><h4 id="inv-jamaah-nama" class="font-black text-sm">-</h4><p id="inv-jamaah-nik" class="text-slate-600">NIK: -</p><p id="inv-jamaah-wa" class="text-slate-600">WA: -</p></div>
+        <div><p class="font-black text-slate-400 text-[9px] uppercase">PAKET</p><h4 id="inv-paket-nama" class="font-black text-sm">-</h4><p id="inv-paket-harga" class="text-slate-700 font-bold">Harga: Rp 0</p><p id="inv-leader" class="text-emerald-800 font-bold">Leader: -</p></div>
+      </div>
+      <div class="border rounded-2xl overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-900 text-white uppercase font-black"><tr><th class="p-3">Keterangan</th><th class="p-3 text-right">Nominal (Rp)</th></tr></thead>
+          <tbody class="divide-y">
+            <tr><td class="p-3 font-semibold">Total Dana Masuk</td><td id="inv-total-bayar" class="p-3 text-right font-black text-emerald-800">Rp 0</td></tr>
+            <tr class="bg-slate-50"><td class="p-3 font-black">Sisa Pelunasan</td><td id="inv-sisa-bayar" class="p-3 text-right font-black text-rose-600">Rp 0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pt-4 border-t flex justify-between items-center gap-4">
+        <div class="text-center flex flex-col items-center"><div id="qrcode-container" class="p-2 border rounded-xl bg-white shadow-sm"></div><p class="text-[9px] text-slate-400 mt-1 font-bold">Scan QR Validasi Realtime</p></div>
+        <div class="text-center relative flex items-center justify-center p-2 min-w-[200px]">
+          <div id="inv-stempel-container" class="absolute -left-4 opacity-80 pointer-events-none"></div>
+          <div class="space-y-1"><p class="text-xs font-bold text-slate-700">Pimpinan Travel</p><div id="inv-ttd-container" class="h-14 flex items-center justify-center"></div><p class="font-black text-slate-950 underline" id="inv-owner-sign-name">Wahyu Tri Kusumawati</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE KOMISI LEADER MODAL -->
+<div id="leader-invoice-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden my-6 text-slate-800 shadow-2xl border">
+    <div class="bg-slate-950 text-white px-6 py-4 flex justify-between items-center no-print border-b">
+      <h3 class="font-black text-sm flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-amber-400"></i> Invoice Komisi Tim Leader</h3>
+      <div class="flex gap-2">
+        <button onclick="window.print()" class="bg-amber-500 text-slate-950 text-xs font-black px-4 py-2 rounded-xl"><i class="fa-solid fa-print"></i> Cetak Kwitansi</button>
+        <button onclick="closeLeaderInvoiceModal()" class="text-slate-400 text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div id="leader-invoice-print-area" class="p-8 space-y-6 bg-white text-slate-900">
+      <div class="flex justify-between items-start border-b-2 border-amber-500 pb-6">
+        <div><h2 id="linv-company-name" class="font-black text-xl text-slate-950 uppercase">PT. QUEEN MADINAH INTERNASIONAL</h2><p id="linv-company-address" class="text-xs text-slate-600 mt-1">Jl. Diponegoro Dk. Karagan, Gandarum</p></div>
+        <div class="text-right"><span class="px-3 py-1 bg-amber-400 text-slate-950 text-[10px] font-black rounded-lg uppercase tracking-wider">REKAP KOMISI LEADER</span><p id="linv-number" class="text-xs font-black mt-2">KMS/QM/LEADER/001</p></div>
+      </div>
+      <div class="bg-amber-50/60 p-4 rounded-2xl border border-amber-200 text-xs flex justify-between items-center">
+        <div><p class="font-black text-slate-400 text-[9px] uppercase">NAMA TIM LEADER</p><h4 id="linv-leader-nama" class="font-black text-lg text-emerald-950">-</h4></div>
+        <div class="text-right"><p class="font-black text-slate-400 text-[9px] uppercase">RATE KOMISI PER JAMAAH</p><h4 id="linv-leader-rate" class="font-black text-sm text-emerald-800">Rp 2.000.000</h4></div>
+      </div>
+      <div class="border rounded-2xl overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-900 text-amber-300 uppercase font-black"><tr><th class="p-3">No</th><th class="p-3">Nama Jamaah Terdaftar</th><th class="p-3">NIK</th><th class="p-3 text-right">Nominal Komisi</th></tr></thead>
+          <tbody id="linv-jamaah-list" class="divide-y text-xs"></tbody>
+          <tfoot class="bg-emerald-950 text-white font-black">
+            <tr><td colspan="3" class="p-3 text-right uppercase">TOTAL KOMISI BERHAK DITERIMA:</td><td id="linv-total-komisi" class="p-3 text-right text-amber-400 text-sm">Rp 0</td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="pt-4 border-t flex justify-between items-center gap-4">
+        <div class="text-center flex flex-col items-center"><div id="leader-qrcode-container" class="p-2 border rounded-xl bg-white shadow-sm"></div><p class="text-[9px] text-slate-400 mt-1 font-bold">Verifikasi Komisi Leader</p></div>
+        <div class="text-center relative flex items-center justify-center p-2 min-w-[200px]">
+          <div id="linv-stempel-container" class="absolute -left-4 opacity-80 pointer-events-none"></div>
+          <div class="space-y-1"><p class="text-xs font-bold text-slate-700">Pimpinan Travel</p><div id="linv-ttd-container" class="h-14 flex items-center justify-center"></div><p class="font-black text-slate-950 underline" id="linv-owner-sign-name">Wahyu Tri Kusumawati</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS LAINNYA -->
+<div id="admin-login-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-slate-800 space-y-4 text-center border shadow-2xl">
+    <h3 class="font-black text-lg">PIN Akses Admin</h3>
+    <form onsubmit="submitAdminLogin(event)" class="space-y-3">
+      <input type="password" id="admin-pin-input" class="w-full px-4 py-3 border rounded-2xl text-center font-black tracking-widest text-lg" required autofocus>
+      <div class="flex gap-2">
+        <button type="button" onclick="closeAdminModal()" class="flex-1 py-2.5 border rounded-xl text-xs font-bold">Batal</button>
+        <button type="submit" class="flex-1 py-2.5 bg-emerald-800 text-white rounded-xl text-xs font-black">Masuk</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- LEADER MANAGEMEN MODAL (ADMIN) -->
+<div id="leader-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 text-slate-800 space-y-4 border shadow-2xl text-xs">
+    <h3 id="leader-modal-title" class="font-black text-base text-slate-900">Kelola Data Tim Leader</h3>
+    <form onsubmit="saveLeader(event)" class="space-y-3">
+      <input type="hidden" id="ldr-id">
+      <div>
+        <label class="font-bold">Nama Tim Leader</label>
+        <input type="text" id="ldr-nama" class="w-full p-2.5 border rounded-xl mt-1 font-bold" placeholder="Contoh: Hj. Ratna Pekalongan" required>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="font-bold">No. WA / Kontak</label>
+          <input type="text" id="ldr-wa" class="w-full p-2.5 border rounded-xl mt-1" placeholder="081234567890">
+        </div>
+        <div>
+          <label class="font-bold">Nominal Komisi / Jamaah (Rp)</label>
+          <input type="number" id="ldr-komisi" class="w-full p-2.5 border rounded-xl mt-1 font-bold text-emerald-800" value="2000000" required>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t">
+        <button type="button" onclick="closeLeaderModal()" class="px-4 py-2 border rounded-xl font-bold">Batal</button>
+        <button type="submit" class="px-6 py-2 bg-emerald-800 text-white rounded-xl font-black shadow-md">Simpan Leader</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="jamaah-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-lg w-full p-6 text-slate-800 space-y-3 text-xs border shadow-2xl">
+    <h3 class="font-black text-base">Tambah Jamaah Baru</h3>
+    <form onsubmit="saveJamaah(event)" class="space-y-3">
+      <div><label class="font-bold">Nama Lengkap Jamaah</label><input type="text" id="j-nama" class="w-full p-2.5 border rounded-xl mt-1 font-bold" required></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-bold">NIK (16 Digit)</label><input type="text" id="j-nik" maxlength="16" class="w-full p-2.5 border rounded-xl mt-1" required></div>
+        <div><label class="font-bold">No. WhatsApp</label><input type="text" id="j-wa" class="w-full p-2.5 border rounded-xl mt-1" required></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="font-bold">Setoran DP (Rp)</label><input type="number" id="j-bayar" class="w-full p-2.5 border rounded-xl mt-1 font-bold" required></div>
+        <div><label class="font-bold">Nama Leader (Komisi Rp 2jt)</label><input type="text" id="j-leader" placeholder="Nama Leader" class="w-full p-2.5 border rounded-xl mt-1 font-bold" required></div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeJamaahModal()" class="px-4 py-2 border rounded-xl font-bold">Batal</button>
+        <button type="submit" class="px-6 py-2 bg-emerald-800 text-white rounded-xl font-black">Simpan Firebase</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="cicilan-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 text-slate-800 space-y-4 border shadow-2xl">
+    <h3 class="font-black text-base">Catat Setoran Cicilan</h3>
+    <form onsubmit="saveCicilan(event)" class="space-y-3 text-xs">
+      <div><label class="font-bold">Pilih Jamaah</label><select id="c-jamaah-id" class="w-full p-2.5 border rounded-xl mt-1 font-bold bg-white" required></select></div>
+      <div><label class="font-bold">Nominal Setoran Baru (Rp)</label><input type="number" id="c-nominal" class="w-full p-2.5 border rounded-xl mt-1 font-bold" required></div>
+      <div><label class="font-bold">Catatan / Keterangan</label><input type="text" id="c-catatan" class="w-full p-2.5 border rounded-xl mt-1" required></div>
+      <div class="flex justify-end gap-2 pt-2"><button type="button" onclick="closeCicilanModal()" class="px-4 py-2 border rounded-xl font-bold">Batal</button><button type="submit" class="px-6 py-2 bg-emerald-800 text-white rounded-xl font-black">Simpan</button></div>
+    </form>
+  </div>
+</div>
+
+<div id="paket-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-lg w-full p-6 text-slate-800 space-y-3 text-xs border shadow-2xl">
+    <h3 id="paket-modal-title" class="font-black text-base">Tambah Paket Umroh</h3>
+    <form onsubmit="savePaket(event)" class="space-y-3">
+      <input type="hidden" id="p-id">
+      <div><label class="font-bold">Nama Paket</label><input type="text" id="p-nama" class="w-full p-2.5 border rounded-xl mt-1 font-bold" required></div>
+      <div><label class="font-bold">Harga (Rp)</label><input type="number" id="p-harga" class="w-full p-2.5 border rounded-xl mt-1 font-bold" required></div>
+      <div><label class="font-bold">Deskripsi / Fasilitas</label><textarea id="p-desc" rows="2" class="w-full p-2.5 border rounded-xl mt-1" required></textarea></div>
+      <div><label class="font-bold">Foto / Brosur Paket Umroh</label><input type="file" id="p-file-input" accept="image/*" class="w-full text-xs mt-1 bg-slate-50 p-2 border rounded-xl"></div>
+      <div class="flex justify-end gap-2 pt-2"><button type="button" onclick="closePaketModal()" class="px-4 py-2 border rounded-xl font-bold">Batal</button><button type="submit" class="px-6 py-2 bg-emerald-800 text-white rounded-xl font-black">Simpan Paket</button></div>
+    </form>
+  </div>
+</div>
+
+<div id="dokumentasi-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 text-slate-800 space-y-3 text-xs border shadow-2xl">
+    <h3 class="font-black text-base">Upload Galeri Dokumentasi</h3>
+    <form onsubmit="saveDokumentasi(event)" class="space-y-3">
+      <div><label class="font-bold">Judul Media</label><input type="text" id="doc-title" class="w-full p-2.5 border rounded-xl mt-1 font-bold" required></div>
+      <div><label class="font-bold">File Foto</label><input type="file" id="doc-file-input" accept="image/*" class="w-full text-xs mt-1 bg-slate-50 p-2 border rounded-xl" required></div>
+      <div class="flex justify-end gap-2 pt-2"><button type="button" onclick="closeDokumentasiModal()" class="px-4 py-2 border rounded-xl font-bold">Batal</button><button type="submit" class="px-6 py-2 bg-emerald-800 text-white rounded-xl font-black">Upload</button></div>
+    </form>
+  </div>
+</div>
+
+<div id="slider-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-md w-full p-6 text-slate-800 space-y-3 text-xs border shadow-2xl">
+    <h3 class="font-black text-base">Tambah Slide Banner</h3>
+    <form onsubmit="saveSliderSlide(event)" class="space-y-3">
+      <div><label class="font-bold">Judul Banner</label><input type="text" id="slide-title" class="w-full p-2.5 border rounded-xl mt-1 font-bold" required></div>
+      <div><label class="font-bold">Deskripsi Banner</label><textarea id="slide-desc" rows="2" class="w-full p-2.5 border rounded-xl mt-1" required></textarea></div>
+      <div><label class="font-bold">File Foto / Video</label><input type="file" id="slide-file-input" accept="image/*,video/*" class="w-full text-xs mt-1 bg-slate-50 p-2 border rounded-xl" required></div>
+      <div class="flex justify-end gap-2 pt-2"><button type="button" onclick="closeSliderModal()" class="px-4 py-2 border rounded-xl font-bold">Batal</button><button type="submit" class="px-6 py-2 bg-emerald-800 text-white rounded-xl font-black">Tambah Slide</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- FIREBASE REALTIME DATABASE INTEGRATION MODULE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  // Configuration dari User
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfPK4iO13c8MOZh-yCBXpPU1mN5LAXcXs",
+    authDomain: "queen-madinah-internasional.firebaseapp.com",
+    projectId: "queen-madinah-internasional",
+    storageBucket: "queen-madinah-internasional.firebasestorage.app",
+    messagingSenderId: "360725635886",
+    appId: "1:360725635886:web:896dea55bc5f95a54cd0bf",
+    measurementId: "G-PN1C8DDC7G"
+  };
+
+  // Inisialisasi Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const dataRef = ref(db, 'portalData');
+
+  // Real-Time Listener: Jika data di database berubah, semua device langsung ter-update!
+  onValue(dataRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      window.appData = data;
+      if(!window.appData.slides) window.appData.slides = [];
+      if(!window.appData.paket) window.appData.paket = [];
+      if(!window.appData.jamaah) window.appData.jamaah = [];
+      if(!window.appData.dokumentasi) window.appData.dokumentasi = [];
+      if(!window.appData.settings.waPhone) window.appData.settings.waPhone = "081234567890";
+      window.renderAll();
+    }
+  });
+
+  // Fungsi simpan otomatis ke Firebase Realtime Cloud
+  window.saveToFirebase = function() {
+    const loader = document.getElementById('sync-loader');
+    if(loader) loader.classList.remove('hidden');
+    set(dataRef, window.appData)
+      .then(() => {
+        if(loader) loader.classList.add('hidden');
+      })
+      .catch((err) => {
+        alert("Gagal simpan ke Firebase: " + err.message);
+        if(loader) loader.classList.add('hidden');
+      });
+  };
+</script>
+
+<!-- APPLICATION LOGIC CODE -->
+<script>
+let isAdminLoggedIn = false;
+let pendingAction = null;
+let currentSlideIndex = 0;
+let slideInterval = null;
+
+// Structure Data Aplikasi
+window.appData = {
+  settings: {
+    companyName: "PT. QUEEN MADINAH INTERNASIONAL",
+    ownerName: "Wahyu Tri Kusumawati",
+    address: "Jl. Diponegoro Dk. Karagan, Gandarum",
+    waPhone: "081234567890",
+    adminPin: "admin123",
+    announcement: "Selamat Datang di Portal PT. Queen Madinah Internasional - Solusi Ibadah Umroh Nyaman & Terpercaya.",
+    ownerPhotoUrl: "", logoUrl: "", ttdUrl: "", stempelUrl: "", themeColor: "emerald"
+  },
+  paket: [
+    { id: "p1", nama: "Paket Umroh Reguler 13 Hari", harga: 35750000, desc: "Fasilitas Hotel Bintang 5 dekat Masjidil Haram dan Nabawi.", imageUrl: "" }
+  ],
+  leaders: [
+    { id: "l1", nama: "Tim Leader Pekalongan", wa: "081234567890", komisiPerJamaah: 2000000 }
+  ],
+  jamaah: [],
+  dokumentasi: [],
+  slides: [
+    { id: "s1", title: "Portal Queen Madinah", desc: "Sistem manajemen pendaftaran jamaah, tabungan, komisi leader, dan katalog umroh resmi.", type: "image", url: "" }
+  ]
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  startSliderTimer();
+});
+
+function switchTab(t) {
+  ['dashboard', 'jamaah', 'tabungan', 'leader', 'dokumentasi', 'paket', 'pengaturan'].forEach(x => document.getElementById('tab-' + x)?.classList.add('hidden'));
+  document.getElementById('tab-' + t)?.classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function checkAdminAccess(target) {
+  if (isAdminLoggedIn) switchTab(target);
+  else { pendingAction = () => switchTab(target); document.getElementById('admin-pin-input').value = ""; document.getElementById('admin-login-modal').classList.remove('hidden'); }
+}
+function checkAdminAction(callback) {
+  if (isAdminLoggedIn) callback();
+  else { pendingAction = callback; document.getElementById('admin-pin-input').value = ""; document.getElementById('admin-login-modal').classList.remove('hidden'); }
+}
+function submitAdminLogin(e) {
+  e.preventDefault();
+  if (document.getElementById('admin-pin-input').value === (window.appData.settings.adminPin || "admin123")) {
+    isAdminLoggedIn = true;
+    document.getElementById('admin-login-modal').classList.add('hidden');
+    document.getElementById('admin-lock-badge').innerText = "Admin (Aktif)";
+    alert("Akses Admin Berhasil!");
+    if (pendingAction) { pendingAction(); pendingAction = null; }
+  } else { alert("PIN Admin Salah!"); }
+}
+function closeAdminModal() { document.getElementById('admin-login-modal').classList.add('hidden'); pendingAction = null; }
+function adminLogout() { isAdminLoggedIn = false; document.getElementById('admin-lock-badge').innerText = "Admin"; switchTab('dashboard'); alert("Keluar Admin."); }
+
+function checkPublicJamaahByNIK() {
+  const nik = document.getElementById('public-nik-input').value.trim();
+  const card = document.getElementById('public-result-card');
+  const j = window.appData.jamaah.find(x => x.nik === nik);
+  if(j) {
+    const pkt = window.appData.paket.find(p => p.id === j.paketId) || window.appData.paket[0] || { harga: 0, nama: 'Reguler' };
+    const bayar = Number(j.bayar || 0);
+    const sisa = Number(pkt.harga) - bayar;
+    document.getElementById('pub-nama').innerText = j.nama;
+    document.getElementById('pub-paket').innerText = pkt.nama;
+    document.getElementById('pub-bayar').innerText = "Rp " + bayar.toLocaleString('id-ID');
+    document.getElementById('pub-sisa').innerText = "Rp " + Math.max(0, sisa).toLocaleString('id-ID');
+    card.classList.remove('hidden');
+  } else { alert("NIK tidak ditemukan!"); card.classList.add('hidden'); }
+}
+
+function applyTheme(theme) {
+  const header = document.getElementById('header-theme');
+  const slider = document.getElementById('slider-container');
+  if(theme === 'midnight') {
+    header.className = "bg-gradient-to-r from-blue-950 via-indigo-900 to-slate-950 text-white shadow-2xl sticky top-0 z-40 border-b border-cyan-500/20 backdrop-blur-md";
+    slider.className = "relative overflow-hidden bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-950 border-2 border-cyan-400/40 rounded-3xl p-6 md:p-10 shadow-2xl text-white min-h-[280px] flex flex-col justify-between";
+  } else if(theme === 'ruby') {
+    header.className = "bg-gradient-to-r from-rose-950 via-rose-900 to-slate-950 text-white shadow-2xl sticky top-0 z-40 border-b border-amber-500/20 backdrop-blur-md";
+    slider.className = "relative overflow-hidden bg-gradient-to-br from-rose-950 via-rose-900 to-slate-950 border-2 border-amber-400/40 rounded-3xl p-6 md:p-10 shadow-2xl text-white min-h-[280px] flex flex-col justify-between";
+  } else if(theme === 'obsidian') {
+    header.className = "bg-gradient-to-r from-slate-900 via-zinc-900 to-black text-white shadow-2xl sticky top-0 z-40 border-b border-amber-500/20 backdrop-blur-md";
+    slider.className = "relative overflow-hidden bg-gradient-to-br from-slate-900 via-zinc-900 to-black border-2 border-amber-400/40 rounded-3xl p-6 md:p-10 shadow-2xl text-white min-h-[280px] flex flex-col justify-between";
+  } else {
+    header.className = "bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-950 text-white shadow-2xl sticky top-0 z-40 border-b border-amber-500/20 backdrop-blur-md";
+    slider.className = "relative overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 border-2 border-amber-400/40 rounded-3xl p-6 md:p-10 shadow-2xl text-white min-h-[280px] flex flex-col justify-between";
+  }
+}
+
+function renderSlider() {
+  const slides = window.appData.slides && window.appData.slides.length > 0 ? window.appData.slides : [{ title: "Portal Queen Madinah", desc: "Pilihan utama perjalanan ibadah umroh anda.", url: "" }];
+  if (currentSlideIndex >= slides.length) currentSlideIndex = 0;
+  const s = slides[currentSlideIndex];
+
+  let mediaHtml = "";
+  if(s.url) {
+    if(s.type === 'video') mediaHtml = `<video src="${s.url}" autoplay muted loop class="absolute inset-0 w-full h-full object-cover opacity-30"></video>`;
+    else mediaHtml = `<div class="absolute inset-0 bg-cover bg-center opacity-30" style="background-image: url('${s.url}')"></div>`;
+  }
+
+  document.getElementById('slider-slides-wrapper').innerHTML = `
+    ${mediaHtml}
+    <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none"><i class="fa-solid fa-kaaba text-[220px] text-amber-400"></i></div>
+    <div class="relative z-10 max-w-2xl space-y-3">
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-amber-400/20 border border-amber-400/40 rounded-full text-amber-300 text-[11px] font-black tracking-wider uppercase">
+        <i class="fa-solid fa-shield-halved"></i> Pimpinan / Owner: ${window.appData.settings.ownerName}
+      </div>
+      <h2 class="text-xs font-extrabold uppercase tracking-widest text-amber-400/90">PROMO SPESIAL UMROH</h2>
+      <h1 class="text-3xl md:text-4xl font-black tracking-tight text-white animate-gold-glow">${s.title}</h1>
+      <p class="text-xs md:text-sm text-emerald-100/90 leading-relaxed font-medium">${s.desc}</p>
+    </div>
+  `;
+
+  document.getElementById('slider-dots').innerHTML = slides.map((_, i) => `
+    <button onclick="currentSlideIndex=${i}; renderSlider();" class="w-2.5 h-2.5 rounded-full ${i === currentSlideIndex ? 'bg-amber-400 w-6' : 'bg-white/40'} transition-all"></button>
+  `).join("");
+
+  document.getElementById('admin-slider-list').innerHTML = slides.map((sl, idx) => `
+    <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border text-xs">
+      <span class="font-bold">${idx+1}. ${sl.title}</span>
+      <button type="button" onclick="deleteSlide(${idx})" class="text-rose-600 font-bold"><i class="fa-solid fa-trash"></i> Hapus</button>
+    </div>
+  `).join("");
+}
+
+function nextSlide() {
+  const slides = window.appData.slides && window.appData.slides.length > 0 ? window.appData.slides : [1];
+  currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+  renderSlider();
+}
+
+function prevSlide() {
+  const slides = window.appData.slides && window.appData.slides.length > 0 ? window.appData.slides : [1];
+  currentSlideIndex = (currentSlideIndex - 1 + slides.length) % slides.length;
+  renderSlider();
+}
+
+function startSliderTimer() {
+  if(slideInterval) clearInterval(slideInterval);
+  slideInterval = setInterval(nextSlide, 5000);
+}
+
+  onValue(dataRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      window.appData = data;
+      if(!window.appData.slides) window.appData.slides = [];
+      if(!window.appData.paket) window.appData.paket = [];
+      if(!window.appData.jamaah) window.appData.jamaah = [];
+      if(!window.appData.leaders) window.appData.leaders = [];
+      if(!window.appData.dokumentasi) window.appData.dokumentasi = [];
+      if(!window.appData.settings.waPhone) window.appData.settings.waPhone = "081234567890";
+      window.renderAll();
+    }
+  });
+window.renderAll = function() {
+  const jamaahList = window.appData.jamaah || [];
+  document.getElementById('stat-total-jamaah').innerText = jamaahList.length;
+  const totalBayar = jamaahList.reduce((s, j) => s + Number(j.bayar || 0), 0);
+  document.getElementById('stat-total-tabungan').innerText = 'Rp ' + totalBayar.toLocaleString('id-ID');
+  
+  let totalHutang = 0, totalLunas = 0;
+  jamaahList.forEach(j => {
+    const pkt = window.appData.paket.find(p => p.id === j.paketId) || window.appData.paket[0] || { harga: 0 };
+    const sisa = Number(pkt.harga) - Number(j.bayar || 0);
+    if (sisa <= 0) totalLunas++; else totalHutang += sisa;
+  });
+  document.getElementById('stat-sisa-pelunasan').innerText = 'Rp ' + totalHutang.toLocaleString('id-ID');
+  
+  // Total Komisi Leader Dinamis
+  const totalKomisiGlobal = jamaahList.reduce((acc, j) => {
+    const ldr = (window.appData.leaders || []).find(l => l.nama === j.leader);
+    const rate = ldr ? Number(ldr.komisiPerJamaah || 2000000) : 2000000;
+    return acc + rate;
+  }, 0);
+  document.getElementById('stat-total-komisi').innerText = 'Rp ' + totalKomisiGlobal.toLocaleString('id-ID');
+
+  document.getElementById('nav-company-name').innerText = window.appData.settings.companyName;
+  document.getElementById('nav-owner-sub').innerText = "Owner: " + window.appData.settings.ownerName;
+  document.getElementById('announcement-text').innerText = window.appData.settings.announcement;
+
+  // Render Kontak Perusahaan
+  const wa = window.appData.settings.waPhone || "081234567890";
+  document.getElementById('contact-wa-link').innerText = wa;
+  document.getElementById('contact-wa-link').href = "https://wa.me/" + wa.replace(/[^0-9]/g, '');
+  document.getElementById('contact-address-text').innerText = window.appData.settings.address || "Pekalongan, Jawa Tengah";
+
+  if (window.appData.settings.logoUrl) {
+    document.getElementById('nav-logo-container').innerHTML = `<div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center overflow-hidden"><img src="${window.appData.settings.logoUrl}" class="w-full h-full object-cover"></div>`;
+  }
+  if (window.appData.settings.ownerPhotoUrl) {
+    document.getElementById('nav-owner-photo-container').innerHTML = `<img src="${window.appData.settings.ownerPhotoUrl}" class="w-full h-full object-cover">`;
+  }
+
+  applyTheme(window.appData.settings.themeColor || 'emerald');
+  renderSlider();
+
+  // Render Tabel Jamaah Admin
+  document.getElementById('jamaah-table-body').innerHTML = jamaahList.map((j, i) => `
+    <tr class="border-b hover:bg-slate-50/50">
+      <td class="p-4 font-bold">${i+1}</td>
+      <td class="p-4"><p class="font-black text-slate-900">${j.nama}</p><p class="text-[10px] text-slate-500">NIK: ${j.nik}</p></td>
+      <td class="p-4"><span class="px-2.5 py-1 bg-amber-100 text-amber-900 rounded-lg font-black text-xs border border-amber-300">${j.leader || 'Admin Direct'}</span></td>
+      <td class="p-4 font-semibold">${j.wa || '-'}</td>
+      <td class="p-4 text-center flex items-center justify-center gap-2">
+        <button onclick="openInvoiceModal('${j.id}')" class="bg-amber-400 text-slate-950 px-3 py-1 rounded font-black text-[10px] shadow-sm"><i class="fa-solid fa-qrcode"></i> Invoice</button>
+        <button onclick="deleteJamaah('${j.id}')" class="text-rose-600 font-bold hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join("");
+
+  // Render Card Tabungan Admin
+  document.getElementById('tabungan-jamaah-cards').innerHTML = jamaahList.map(j => {
+    const total = Number(j.bayar || 0);
+    return `<div class="glass-card rounded-3xl p-5 shadow-xl border space-y-2"><h4 class="font-black text-sm text-slate-900">${j.nama}</h4><p class="text-xs text-emerald-800 font-bold">Total Masuk: Rp ${total.toLocaleString('id-ID')}</p><button onclick="openCicilanModal('${j.id}')" class="w-full bg-emerald-800 text-white text-xs py-2 rounded-xl font-bold shadow-sm">Catat Setoran Baru</button></div>`;
+  }).join("");
+
+  // Render Katalog Paket
+  document.getElementById('paket-full-grid').innerHTML = (window.appData.paket || []).map(p => `
+    <div class="glass-card rounded-3xl border overflow-hidden shadow-xl flex flex-col justify-between">
+      <div>
+        ${p.imageUrl ? `<div class="h-48 w-full bg-slate-900 overflow-hidden"><img src="${p.imageUrl}" class="w-full h-full object-cover"></div>` : `<div class="h-28 w-full bg-gradient-to-r from-emerald-900 to-teal-900 flex items-center justify-center text-amber-300 font-black text-lg"><i class="fa-solid fa-kaaba mr-2"></i> PAKET UMROH</div>`}
+        <div class="p-4 space-y-2">
+          <h4 class="font-black text-sm text-slate-900">${p.nama}</h4>
+          <p class="text-xs text-slate-500 leading-relaxed">${p.desc}</p>
+          <p class="font-black text-emerald-900 text-sm">Rp ${Number(p.harga).toLocaleString('id-ID')}</p>
+        </div>
+      </div>
+      <div class="p-4 pt-0 flex gap-2">
+        <button onclick="checkAdminAction(() => openPaketModal('${p.id}'))" class="flex-1 bg-amber-400 text-slate-950 text-xs font-bold py-2 rounded-xl shadow-sm"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+        <button onclick="checkAdminAction(() => deletePaket('${p.id}'))" class="bg-rose-50 text-rose-600 text-xs font-bold px-3 py-2 rounded-xl"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>
+  `).join("");
+
+  // Render Dokumentasi Galeri
+  document.getElementById('dokumentasi-grid-container').innerHTML = (window.appData.dokumentasi || []).map(d => `
+    <div class="glass-card rounded-3xl border p-3 space-y-2 shadow-xl">
+      <div class="h-40 bg-slate-900 rounded-2xl overflow-hidden"><img src="${d.url}" class="w-full h-full object-cover"></div>
+      <p class="text-xs font-black text-slate-900">${d.title}</p>
+      <button onclick="checkAdminAction(() => deleteDokumentasi('${d.id}'))" class="text-rose-600 text-xs font-bold">Hapus (Admin)</button>
+    </div>
+  `).join("");
+
+  renderLeaderPortal();
+  fillSettingsForm();
+  populateDropdowns();
+}
+
+// LOGIKA PORTAL LEADER & REKAP KOMISI AUTOMATIS
+function renderLeaderPortal() {
+  const jamaahList = window.appData.jamaah || [];
+  const leaderMaster = window.appData.leaders || [];
+  const search = (document.getElementById('leader-search-input')?.value || "").toLowerCase();
+
+  // Kelompokkan Jamaah Berdasarkan Leader
+  const leaderMap = {};
+  
+  // Masukkan semua leader terdaftar di master ke map
+  leaderMaster.forEach(l => {
+    leaderMap[l.nama] = {
+      info: l,
+      jamaah: []
+    };
+  });
+
+  // Masukkan jamaah ke leader masing-masing
+  jamaahList.forEach(j => {
+    const leaderName = j.leader ? j.leader.trim() : "Admin Direct";
+    if(!leaderMap[leaderName]) {
+      leaderMap[leaderName] = {
+        info: { id: null, nama: leaderName, wa: "-", komisiPerJamaah: 2000000 },
+        jamaah: []
+      };
+    }
+    leaderMap[leaderName].jamaah.push(j);
+  });
+
+  const leaderNames = Object.keys(leaderMap).filter(l => l.toLowerCase().includes(search));
+
+  document.getElementById('leader-summary-grid').innerHTML = leaderNames.map(lName => {
+    const item = leaderMap[lName];
+    const jList = item.jamaah;
+    const rateKomisi = Number(item.info.komisiPerJamaah || 2000000);
+    const totalKomisi = jList.length * rateKomisi;
+    const isMasterLeader = !!item.info.id;
+
+    return `
+      <div class="glass-card rounded-3xl p-5 border-2 border-amber-400/30 shadow-xl space-y-4 bg-gradient-to-br from-white via-amber-50/20 to-white">
+        <div class="flex justify-between items-start border-b pb-3">
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-black uppercase text-amber-600 bg-amber-100 px-2 py-0.5 rounded">Tim Leader Resmi</span>
+              ${isMasterLeader ? `<button onclick="checkAdminAction(() => openLeaderModal('${item.info.id}'))" class="text-xs text-amber-600 hover:text-amber-800"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="checkAdminAction(() => deleteLeader('${item.info.id}'))" class="text-xs text-rose-600 hover:text-rose-800"><i class="fa-solid fa-trash"></i></button>` : ''}
+            </div>
+            <h3 class="font-black text-lg text-slate-900 mt-1">${lName}</h3>
+            ${item.info.wa ? `<p class="text-[10px] text-slate-500 font-bold"><i class="fa-brands fa-whatsapp text-emerald-600"></i> ${item.info.wa}</p>` : ''}
+          </div>
+          <button onclick="openLeaderInvoiceModal('${lName}')" class="bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1.5">
+            <i class="fa-solid fa-receipt"></i> Kwitansi Komisi
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-slate-50 p-2.5 rounded-xl border">
+            <p class="text-slate-400 font-extrabold text-[9px]">JAMAAH REKRUTAN</p>
+            <p class="font-black text-slate-900 text-base mt-0.5">${jList.length} Jamaah</p>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border">
+            <p class="text-slate-400 font-extrabold text-[9px]">TOTAL HAK KOMISI (@Rp ${rateKomisi.toLocaleString('id-ID')})</p>
+            <p class="font-black text-emerald-800 text-base mt-0.5">Rp ${totalKomisi.toLocaleString('id-ID')}</p>
+          </div>
+        </div>
+        <div class="space-y-1 pt-1">
+          <p class="text-[10px] font-bold text-slate-400 uppercase">Daftar Jamaah Dibawah ${lName}:</p>
+          <div class="max-h-28 overflow-y-auto space-y-1 text-xs border rounded-xl p-2 bg-slate-50">
+            ${jList.length > 0 ? jList.map(j => `<div class="flex justify-between items-center py-0.5"><span class="font-bold text-slate-800">${j.nama}</span><span class="text-[10px] text-emerald-700 font-bold">+Rp ${rateKomisi.toLocaleString('id-ID')}</span></div>`).join("") : `<p class="text-[10px] text-slate-400 italic text-center py-2">Belum ada jamaah terdaftar</p>`}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// INVOICE HAK KOMISI LEADER
+function openLeaderInvoiceModal(leaderName) {
+  const jamaahList = (window.appData.jamaah || []).filter(j => (j.leader ? j.leader.trim() : "Admin Direct") === leaderName);
+  const ldrInfo = (window.appData.leaders || []).find(l => l.nama === leaderName);
+  const rateKomisi = ldrInfo ? Number(ldrInfo.komisiPerJamaah || 2000000) : 2000000;
+
+  document.getElementById('linv-leader-nama').innerText = leaderName;
+  document.getElementById('linv-company-name').innerText = window.appData.settings.companyName;
+  document.getElementById('linv-company-address').innerText = window.appData.settings.address;
+  document.getElementById('linv-number').innerText = "KMS/QM/" + Date.now().toString().slice(-6);
+  document.getElementById('linv-leader-rate').innerText = "Rp " + rateKomisi.toLocaleString('id-ID');
+
+  document.getElementById('linv-jamaah-list').innerHTML = jamaahList.map((j, i) => `
+    <tr>
+      <td class="p-3 font-bold">${i+1}</td>
+      <td class="p-3 font-black text-slate-900">${j.nama}</td>
+      <td class="p-3 text-slate-500">${j.nik}</td>
+      <td class="p-3 text-right font-black text-emerald-800">Rp ${rateKomisi.toLocaleString('id-ID')}</td>
+    </tr>
+  `).join("");
+
+  const totalKomisi = jamaahList.length * rateKomisi;
+  document.getElementById('linv-total-komisi').innerText = "Rp " + totalKomisi.toLocaleString('id-ID');
+
+  const qrContainer = document.getElementById('leader-qrcode-container'); qrContainer.innerHTML = "";
+  try { new QRCode(qrContainer, { text: `VALIDATED KOMISI LEADER: ${leaderName} - TOTAL: Rp ${totalKomisi}`, width: 80, height: 80 }); } catch(e) {}
+
+  if(window.appData.settings.ttdUrl) document.getElementById('linv-ttd-container').innerHTML = `<img src="${window.appData.settings.ttdUrl}" class="h-12 object-contain">`;
+  if(window.appData.settings.stempelUrl) document.getElementById('linv-stempel-container').innerHTML = `<img src="${window.appData.settings.stempelUrl}" class="w-20 opacity-80">`;
+  
+  document.getElementById('leader-invoice-modal').classList.remove('hidden');
+}
+
+// MANAGEMENT MODAL FUNCS TIM LEADER
+function openLeaderModal(id="") {
+  if(id) {
+    const l = (window.appData.leaders || []).find(x => x.id === id);
+    if(l) {
+      document.getElementById('leader-modal-title').innerText = "Edit Data Tim Leader";
+      document.getElementById('ldr-id').value = l.id;
+      document.getElementById('ldr-nama').value = l.nama;
+      document.getElementById('ldr-wa').value = l.wa || "";
+      document.getElementById('ldr-komisi').value = l.komisiPerJamaah || 2000000;
+    }
+  } else {
+    document.getElementById('leader-modal-title').innerText = "Tambah Tim Leader Baru";
+    document.getElementById('ldr-id').value = "";
+    document.getElementById('ldr-nama').value = "";
+    document.getElementById('ldr-wa').value = "";
+    document.getElementById('ldr-komisi').value = 2000000;
+  }
+  document.getElementById('leader-modal').classList.remove('hidden');
+}
+
+function closeLeaderModal() { document.getElementById('leader-modal').classList.add('hidden'); }
+
+function saveLeader(e) {
+  e.preventDefault();
+  if(!window.appData.leaders) window.appData.leaders = [];
+  const id = document.getElementById('ldr-id').value;
+  const nama = document.getElementById('ldr-nama').value.trim();
+  const wa = document.getElementById('ldr-wa').value.trim();
+  const komisiPerJamaah = Number(document.getElementById('ldr-komisi').value || 2000000);
+
+  if(id) {
+    const l = window.appData.leaders.find(x => x.id === id);
+    if(l) {
+      const oldNama = l.nama;
+      l.nama = nama; l.wa = wa; l.komisiPerJamaah = komisiPerJamaah;
+      // Update data jamaah yang terikat jika nama leader berubah
+      if(oldNama !== nama && window.appData.jamaah) {
+        window.appData.jamaah.forEach(j => {
+          if(j.leader === oldNama) j.leader = nama;
+        });
+      }
+    }
+  } else {
+    window.appData.leaders.push({
+      id: 'l_' + Date.now(),
+      nama, wa, komisiPerJamaah
+    });
+  }
+
+  window.saveToFirebase();
+  closeLeaderModal();
+  alert("Data Tim Leader Berhasil Disimpan!");
+}
+
+function deleteLeader(id) {
+  if(confirm("Apakah Anda yakin ingin menghapus Tim Leader ini?")) {
+    window.appData.leaders = (window.appData.leaders || []).filter(x => x.id !== id);
+    window.saveToFirebase();
+    alert("Tim Leader berhasil dihapus!");
+  }
+}
+
+function closeLeaderInvoiceModal() { document.getElementById('leader-invoice-modal').classList.add('hidden'); }
+
+function openInvoiceModal(jId) {
+  const j = window.appData.jamaah.find(x => x.id === jId); if(!j) return;
+  const pkt = window.appData.paket.find(p => p.id === j.paketId) || window.appData.paket[0] || { nama: 'Reguler', harga: 35750000 };
+  document.getElementById('inv-company-name').innerText = window.appData.settings.companyName;
+  document.getElementById('inv-company-address').innerText = window.appData.settings.address;
+  document.getElementById('inv-jamaah-nama').innerText = j.nama;
+  document.getElementById('inv-jamaah-nik').innerText = "NIK: " + j.nik;
+  document.getElementById('inv-jamaah-wa').innerText = "WA: " + j.wa;
+  document.getElementById('inv-paket-nama').innerText = pkt.nama;
+  document.getElementById('inv-paket-harga').innerText = "Harga: Rp " + Number(pkt.harga).toLocaleString('id-ID');
+  document.getElementById('inv-leader').innerText = "Leader: " + (j.leader || 'Admin');
+  const bayar = Number(j.bayar || 0);
+  document.getElementById('inv-total-bayar').innerText = "Rp " + bayar.toLocaleString('id-ID');
+  document.getElementById('inv-sisa-bayar').innerText = "Rp " + Math.max(0, Number(pkt.harga) - bayar).toLocaleString('id-ID');
+  
+  const qrContainer = document.getElementById('qrcode-container'); qrContainer.innerHTML = "";
+  try { new QRCode(qrContainer, { text: `VALIDATED JAMAAH: ${j.nama} - NIK:${j.nik}`, width: 80, height: 80 }); } catch(e) {}
+  
+  if(window.appData.settings.ttdUrl) document.getElementById('inv-ttd-container').innerHTML = `<img src="${window.appData.settings.ttdUrl}" class="h-12 object-contain">`;
+  if(window.appData.settings.stempelUrl) document.getElementById('inv-stempel-container').innerHTML = `<img src="${window.appData.settings.stempelUrl}" class="w-20 opacity-80">`;
+  document.getElementById('invoice-modal').classList.remove('hidden');
+}
+
+function closeInvoiceModal() { document.getElementById('invoice-modal').classList.add('hidden'); }
+function openJamaahModal() { document.getElementById('jamaah-modal').classList.remove('hidden'); }
+function closeJamaahModal() { document.getElementById('jamaah-modal').classList.add('hidden'); }
+function openCicilanModal(id="") { if(id) document.getElementById('c-jamaah-id').value=id; document.getElementById('cicilan-modal').classList.remove('hidden'); }
+function closeCicilanModal() { document.getElementById('cicilan-modal').classList.add('hidden'); }
+
+function openPaketModal(id="") {
+  if(id) {
+    const p = window.appData.paket.find(x => x.id === id);
+    if(p) {
+      document.getElementById('paket-modal-title').innerText = "Edit Paket Umroh";
+      document.getElementById('p-id').value = p.id;
+      document.getElementById('p-nama').value = p.nama;
+      document.getElementById('p-harga').value = p.harga;
+      document.getElementById('p-desc').value = p.desc;
+    }
+  } else {
+    document.getElementById('paket-modal-title').innerText = "Tambah Paket Umroh";
+    document.getElementById('p-id').value = "";
+    document.getElementById('p-nama').value = "";
+    document.getElementById('p-harga').value = "";
+    document.getElementById('p-desc').value = "";
+    document.getElementById('p-file-input').value = "";
+  }
+  document.getElementById('paket-modal').classList.remove('hidden');
+}
+
+function closePaketModal() { document.getElementById('paket-modal').classList.add('hidden'); }
+function openDokumentasiModal() { document.getElementById('dokumentasi-modal').classList.remove('hidden'); }
+function closeDokumentasiModal() { document.getElementById('dokumentasi-modal').classList.add('hidden'); }
+function openSliderModal() { document.getElementById('slider-modal').classList.remove('hidden'); }
+function closeSliderModal() { document.getElementById('slider-modal').classList.add('hidden'); }
+
+function saveJamaah(e) {
+  e.preventDefault();
+  if(!window.appData.jamaah) window.appData.jamaah = [];
+  window.appData.jamaah.push({
+    id: 'j_' + Date.now(),
+    nama: document.getElementById('j-nama').value,
+    nik: document.getElementById('j-nik').value,
+    wa: document.getElementById('j-wa').value,
+    bayar: Number(document.getElementById('j-bayar').value || 0),
+    leader: document.getElementById('j-leader').value,
+    paketId: window.appData.paket[0]?.id || ''
+  });
+  window.saveToFirebase(); closeJamaahModal(); alert("Jamaah Disimpan & Komisi Leader Rp 2jt Terhitung!");
+}
+
+function saveCicilan(e) {
+  e.preventDefault();
+  const jId = document.getElementById('c-jamaah-id').value;
+  const nom = Number(document.getElementById('c-nominal').value || 0);
+  const j = window.appData.jamaah.find(x => x.id === jId);
+  if(j) {
+    j.bayar = Number(j.bayar || 0) + nom;
+    window.saveToFirebase(); closeCicilanModal(); alert("Setoran Cicilan Berhasil Ditambahkan!");
+  }
+}
+
+function savePaket(e) {
+  e.preventDefault();
+  const id = document.getElementById('p-id').value;
+  const nama = document.getElementById('p-nama').value;
+  const harga = Number(document.getElementById('p-harga').value);
+  const desc = document.getElementById('p-desc').value;
+  const file = document.getElementById('p-file-input').files[0];
+
+  const updateAndSave = (imageUrl="") => {
+    if(!window.appData.paket) window.appData.paket = [];
+    if(id) {
+      const p = window.appData.paket.find(x => x.id === id);
+      if(p) {
+        p.nama = nama; p.harga = harga; p.desc = desc;
+        if(imageUrl) p.imageUrl = imageUrl;
+      }
+    } else {
+      window.appData.paket.push({
+        id: 'p_' + Date.now(),
+        nama, harga, desc,
+        imageUrl: imageUrl || ''
+      });
+    }
+    window.saveToFirebase(); closePaketModal(); alert("Paket Umroh Berhasil Disimpan!");
+  };
+
+  if(file) {
+    const r = new FileReader();
+    r.onload = (evt) => { updateAndSave(evt.target.result); };
+    r.readAsDataURL(file);
+  } else {
+    updateAndSave();
+  }
+}
+
+function saveDokumentasi(e) {
+  e.preventDefault();
+  const title = document.getElementById('doc-title').value;
+  const file = document.getElementById('doc-file-input').files[0];
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = (evt) => {
+    if(!window.appData.dokumentasi) window.appData.dokumentasi = [];
+    window.appData.dokumentasi.push({ id: 'doc_' + Date.now(), title, url: evt.target.result });
+    window.saveToFirebase(); closeDokumentasiModal(); alert("Media Berhasil Diupload!");
+  };
+  r.readAsDataURL(file);
+}
+
+function saveSliderSlide(e) {
+  e.preventDefault();
+  const title = document.getElementById('slide-title').value;
+  const desc = document.getElementById('slide-desc').value;
+  const file = document.getElementById('slide-file-input').files[0];
+  if(!file) return;
+  const isVideo = file.type.startsWith('video');
+  const r = new FileReader();
+  r.onload = (evt) => {
+    if(!window.appData.slides) window.appData.slides = [];
+    window.appData.slides.push({ id: 's_' + Date.now(), title, desc, type: isVideo ? 'video' : 'image', url: evt.target.result });
+    window.saveToFirebase(); closeSliderModal(); alert("Slide Banner Berhasil Ditambahkan!");
+  };
+  r.readAsDataURL(file);
+}
+
+function deleteSlide(idx) {
+  if(confirm("Hapus slide banner ini?")) {
+    window.appData.slides.splice(idx, 1);
+    window.saveToFirebase();
+  }
+}
+
+function deleteJamaah(id) { if(confirm("Hapus jamaah ini?")) { window.appData.jamaah = window.appData.jamaah.filter(x => x.id !== id); window.saveToFirebase(); } }
+function deletePaket(id) { if(confirm("Hapus paket ini?")) { window.appData.paket = window.appData.paket.filter(x => x.id !== id); window.saveToFirebase(); } }
+function deleteDokumentasi(id) { if(confirm("Hapus dokumentasi ini?")) { window.appData.dokumentasi = window.appData.dokumentasi.filter(x => x.id !== id); window.saveToFirebase(); } }
+
+function downloadExcelTemplate() {
+  const templateData = [
+    { "Nama": "Ahmad Fauzi", "NIK": "3275012345678901", "WA": "081234567890", "Bayar": 5000000, "Leader": "Tim Leader Pekalongan" },
+    { "Nama": "Siti Aminah", "NIK": "3275098765432109", "WA": "081987654321", "Bayar": 7500000, "Leader": "Hj. Ratna" }
+  ];
+  const worksheet = XLSX.utils.json_to_sheet(templateData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Data Jamaah");
+  XLSX.writeFile(workbook, "Template_Import_Jamaah_Queen_Madinah.xlsx");
+}
+
+function handleExcelImport(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+    const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+    if(!window.appData.jamaah) window.appData.jamaah = [];
+    json.forEach(row => {
+      const nama = row['Nama'] || row['Nama Jamaah'] || "";
+      if (nama) {
+        window.appData.jamaah.push({
+          id: 'j_' + Date.now() + Math.random(),
+          nama: String(nama),
+          nik: String(row['NIK'] || '3275000000000000'),
+          wa: String(row['WA'] || '081234567890'),
+          bayar: Number(row['Bayar'] || 5000000),
+          leader: String(row['Leader'] || 'Admin Direct')
+        });
+      }
+    });
+    window.saveToFirebase(); alert("Import Excel Berhasil ke Firebase!");
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function saveAllSettings(e) {
+  e.preventDefault();
+  window.appData.settings.companyName = document.getElementById('setting-company-name').value;
+  window.appData.settings.ownerName = document.getElementById('setting-owner-name').value;
+  window.appData.settings.address = document.getElementById('setting-address').value;
+  window.appData.settings.waPhone = document.getElementById('setting-wa-phone').value;
+  window.appData.settings.announcement = document.getElementById('setting-announcement').value;
+  window.appData.settings.themeColor = document.getElementById('setting-theme-color').value;
+  const pin = document.getElementById('setting-admin-pin').value;
+  if(pin) window.appData.settings.adminPin = pin;
+
+  const ownerPhotoFile = document.getElementById('setting-owner-photo-file').files[0];
+  const logoFile = document.getElementById('setting-logo-file').files[0];
+  const ttdFile = document.getElementById('setting-ttd-file').files[0];
+  const stempelFile = document.getElementById('setting-stempel-file').files[0];
+
+  let pending = 0; const done = () => { pending--; if(pending <= 0) { window.saveToFirebase(); alert("Pengaturan & Kontak Perusahaan Tersimpan ke Firebase!"); } };
+
+  if(ownerPhotoFile) { pending++; const r=new FileReader(); r.onload=(evt)=>{ window.appData.settings.ownerPhotoUrl = evt.target.result; done(); }; r.readAsDataURL(ownerPhotoFile); }
+  if(logoFile) { pending++; const r=new FileReader(); r.onload=(evt)=>{ window.appData.settings.logoUrl = evt.target.result; done(); }; r.readAsDataURL(logoFile); }
+  if(ttdFile) { pending++; const r=new FileReader(); r.onload=(evt)=>{ window.appData.settings.ttdUrl = evt.target.result; done(); }; r.readAsDataURL(ttdFile); }
+  if(stempelFile) { pending++; const r=new FileReader(); r.onload=(evt)=>{ window.appData.settings.stempelUrl = evt.target.result; done(); }; r.readAsDataURL(stempelFile); }
+
+  if(pending === 0) { window.saveToFirebase(); alert("Pengaturan & Kontak Perusahaan Tersimpan ke Firebase!"); }
+}
+
+function fillSettingsForm() {
+  document.getElementById('setting-company-name').value = window.appData.settings.companyName || "";
+  document.getElementById('setting-owner-name').value = window.appData.settings.ownerName || "";
+  document.getElementById('setting-address').value = window.appData.settings.address || "";
+  document.getElementById('setting-wa-phone').value = window.appData.settings.waPhone || "081234567890";
+  document.getElementById('setting-announcement').value = window.appData.settings.announcement || "";
+  document.getElementById('setting-theme-color').value = window.appData.settings.themeColor || 'emerald';
+}
+
+function populateDropdowns() {
+  document.getElementById('c-jamaah-id').innerHTML = (window.appData.jamaah || []).map(j => `<option value="${j.id}">${j.nama}</option>`).join("");
+}
+</script>
+</body>
+</html>
